@@ -17,7 +17,5 @@ public:
     void update() override;
     float getValue() const override; // Retourne la Température
     const char* getName() const override;
-    
-    // Méthode spécifique pour l'humidité
-    float getHumidity() const;
+    float getHumidity() const override; // Retourne l'hulmidité
 };

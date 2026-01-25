@@ -1,30 +1,39 @@
 #include <Arduino.h>
 #include "WeatherStation.h"
 #include "DHT22Sensor.h"
+#include "SerialPublisher.h"
+#include "WifiPublisher.h"
 
 WeatherStation* station;
-DHT22Sensor* sensorInside;  // GPIO 4
-DHT22Sensor* sensorOutside; // GPIO 5
+DHT22Sensor* sensorInside;
 
 void setup() {
     Serial.begin(115200);
     delay(1000); 
-    Serial.println("Démarrage Station Météo ESP32...");
 
-    // Initialisation des capteurs sur les pins 4 et 5
-    sensorInside  = new DHT22Sensor(4, "Living Room");
-    //sensorOutside = new DHT22Sensor(5, "Outside");
+    // --- 1. Création des Capteurs ---
+    sensorInside = new DHT22Sensor(4, "Living Room");
 
+    // --- 2. Création des Publishers (Sorties) ---
+    IPublisher* serialPub = new SerialPublisher();
+    
+    // REMPLACE PAR TON WIFI ET TON WEBHOOK (ou URL serveur local)
+    IPublisher* wifiPub = new WifiPublisher("HUAWEI Y7 Prime 2019", "aaaaaaaa", "https://webhook.site/016f4558-3ed4-4504-8a56-cb7d091fdf06");
+
+    // --- 3. Configuration de la Station ---
     station = new WeatherStation();
     station->addSensor(sensorInside);
-    //station->addSensor(sensorOutside);
+    
+    // Ajout des deux sorties : La station enverra les données AUSSI au Serial, ET au Wifi
+    station->addPublisher(serialPub);
+    station->addPublisher(wifiPub);
 
-    Serial.println("Système Prêt.");
+    Serial.println("Système Prêt avec Publishers (Serial + Wifi).");
 }
 
 void loop() {
     station->readAllSensors();
-    station->displayReport();
+    station->publishReport(); // Envoi JSON partout
 
-    delay(2000); // 2 secondes (DHT22 ne supporte pas des lectures plus rapides)
+    delay(5000); // 5 secondes pour laisser le temps au WiFi
 }
