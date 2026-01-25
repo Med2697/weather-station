@@ -43,11 +43,25 @@ std::string WeatherStation::generateJsonReport() {
 }
 
 void WeatherStation::publishReport() {
-    // 1. Générer les données une seule fois
     std::string jsonData = generateJsonReport();
 
-    // 2. Envoyer à TOUS les publishers (Serial + Wifi)
-    for (auto* publisher : publishers) {
-        publisher->publish(jsonData);
+    // OPTIMISATION ICI :
+    // On vérifie si au moins un capteur a changé significativement
+    bool significantChange = false;
+    for (const auto* sensor : sensors) {
+        if (sensor->hasChanged(0.5)) { // Seuil de 0.5 degré
+            significantChange = true;
+            break; 
+        }
+    }
+
+    // On publie SEULEMENT s'il y a eu un changement important
+    if (significantChange) {
+        for (auto* publisher : publishers) {
+            publisher->publish(jsonData);
+        }
+    } else {
+        // Debug optionnel
+        Serial.println("Aucun changement significatif, envoi annulé (Bandwidth Saving)");
     }
 }
