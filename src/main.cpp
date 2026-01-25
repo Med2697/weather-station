@@ -3,32 +3,43 @@
 #include "DHT22Sensor.h"
 #include "SerialPublisher.h"
 #include "WifiPublisher.h"
+#include "MqttPublisher.h"
+
 
 WeatherStation* station;
 DHT22Sensor* sensorInside;
+IPublisher* mqttPub;
 
 void setup() {
     Serial.begin(115200);
     delay(1000); 
 
-    // --- 1. Création des Capteurs ---
+    // 1. Connection WiFi standard
+    WiFi.begin("SSID", "PSWD");
+    Serial.print("Connexion WiFi");
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.println("Connecté!");
+
+    // 2. Création des objets
     sensorInside = new DHT22Sensor(4, "Living Room");
-
-    // --- 2. Création des Publishers (Sorties) ---
-    IPublisher* serialPub = new SerialPublisher();
     
-    // REMPLACE PAR TON WIFI ET TON WEBHOOK (ou URL serveur local)
-    IPublisher* wifiPub = new WifiPublisher("SSID", "MDP", "https://webhook.site/Id");
+    // 3. Initialisation du Publisher MQTT
+    // Utilisation du broker public HiveMQ (Gratuit pour démo)
+    mqttPub = new MqttPublisher("broker.hivemq.com", 1883, "weather/station/data");
+    mqttPub->setup(); // Setup spécifique pour MQTT
 
-    // --- 3. Configuration de la Station ---
+    // 4. Configuration Station
     station = new WeatherStation();
     station->addSensor(sensorInside);
     
-    // Ajout des deux sorties : La station enverra les données AUSSI au Serial, ET au Wifi
-    station->addPublisher(serialPub);
-    station->addPublisher(wifiPub);
+    // On garde Serial pour le Debug, mais on ajoute MQTT pour le "Real-time"
+    station->addPublisher(new SerialPublisher());
+    station->addPublisher(mqttPub);
 
-    Serial.println("Système Prêt avec Publishers (Serial + Wifi).");
+    Serial.println("Système MQTT prêt.");
 }
 
 void loop() {
@@ -37,3 +48,4 @@ void loop() {
 
     delay(5000); // 5 secondes pour laisser le temps au WiFi
 }
+
