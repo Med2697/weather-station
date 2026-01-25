@@ -18,7 +18,7 @@ void setup() {
     IPublisher* serialPub = new SerialPublisher();
     
     // REMPLACE PAR TON WIFI ET TON WEBHOOK (ou URL serveur local)
-    IPublisher* wifiPub = new WifiPublisher("HUAWEI Y7 Prime 2019", "aaaaaaaa", "https://webhook.site/016f4558-3ed4-4504-8a56-cb7d091fdf06");
+    IPublisher* wifiPub = new WifiPublisher("SSID", "MDP", "https://webhook.site/Id");
 
     // --- 3. Configuration de la Station ---
     station = new WeatherStation();
