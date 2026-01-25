@@ -1,43 +1,36 @@
 #include "../include/MqttPublisher.h"
 #include <Arduino.h>
 
-MqttPublisher::MqttPublisher(const char* server, int port, const char* topicName)
-    : mqtt_server(server), mqtt_port(port), topic(topicName), client(espClient) {
+MqttPublisher::MqttPublisher(const char* server, int port, const char* user, const char* pass, const char* topicName)
+    : mqtt_server(server), mqtt_port(port), mqtt_user(user), mqtt_password(pass), topic(topicName), client(espClient) {
 }
 
 void MqttPublisher::setup() {
+    // SSL sans vérification de certificat (Pour démo HiveMQ Cloud)
+    espClient.setInsecure();
+    
     client.setServer(mqtt_server, mqtt_port);
     reconnect();
 }
 
 void MqttPublisher::reconnect() {
-    // Boucle tant que non connecté
     while (!client.connected()) {
-        Serial.print("Tentative de connexion MQTT...");
-        // ID Client unique (généré depuis l'adresse MAC)
-        String clientId = "ESP32Client-" + String(WiFi.macAddress());
+        Serial.print("Connexion MQTT Cloud...");
+        String clientId = "ESP32-" + String(WiFi.macAddress());
         
-        if (client.connect(clientId.c_str())) {
-            Serial.println("connecté");
+        // Connexion avec User/Pass
+        if (client.connect(clientId.c_str(), mqtt_user, mqtt_password)) {
+            Serial.println("Connecté !");
         } else {
-            Serial.print("échec, rc=");
-            Serial.print(client.state());
-            Serial.println(" réessai dans 5s");
+            Serial.print("Erreur : ");
+            Serial.println(client.state());
             delay(5000);
         }
     }
 }
 
 void MqttPublisher::publish(const std::string& data) {
-    // S'assurer qu'on est connecté
-    if (!client.connected()) {
-        reconnect();
-    }
-    // Publier les données JSON sur le topic
+    if (!client.connected()) reconnect();
     client.publish(topic, data.c_str());
-    
-    // Boucle interne du client MQTT (nécessaire pour gérer les keep-alives)
-    // Note : Dans une architecture pro, on ferait ça dans le main loop via un callback,
-    // mais ici on le met ici pour simplifier la démo.
-    client.loop(); 
+    client.loop();
 }

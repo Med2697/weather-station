@@ -2,50 +2,48 @@
 #include "WeatherStation.h"
 #include "DHT22Sensor.h"
 #include "SerialPublisher.h"
-#include "WifiPublisher.h"
 #include "MqttPublisher.h"
+#include "secrets.h"
 
 
 WeatherStation* station;
 DHT22Sensor* sensorInside;
-IPublisher* mqttPub;
+IPublisher* mqttPub; 
 
 void setup() {
     Serial.begin(115200);
     delay(1000); 
 
-    // 1. Connection WiFi standard
-    WiFi.begin("SSID", "PSWD");
+    // --- 1. WIFI ---
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     Serial.print("Connexion WiFi");
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
-    Serial.println("Connecté!");
+    while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
+    Serial.println("\nWiFi Connecté.");
 
-    // 2. Création des objets
+    // --- 2. CONFIGURATION HIVEMQ CLOUD ---
+    // Remplace ces lignes par TES infos
+    const char* mqttServer = MQTT_SERVER;
+    int mqttPort = MQTT_PORT; 
+    const char* mqttUser = MQTT_USER;
+    const char* mqttPass = MQTT_PASSWORD;
+    const char* mqttTopic = MQTT_TOPIC;
+
     sensorInside = new DHT22Sensor(4, "Living Room");
     
-    // 3. Initialisation du Publisher MQTT
-    // Utilisation du broker public HiveMQ (Gratuit pour démo)
-    mqttPub = new MqttPublisher("broker.hivemq.com", 1883, "weather/station/data");
-    mqttPub->setup(); // Setup spécifique pour MQTT
+    mqttPub = new MqttPublisher(mqttServer, mqttPort, mqttUser, mqttPass, mqttTopic);
+    mqttPub->setup();
 
-    // 4. Configuration Station
     station = new WeatherStation();
     station->addSensor(sensorInside);
-    
-    // On garde Serial pour le Debug, mais on ajoute MQTT pour le "Real-time"
     station->addPublisher(new SerialPublisher());
     station->addPublisher(mqttPub);
 
-    Serial.println("Système MQTT prêt.");
+    Serial.println("Système Prêt (Smart Publishing ON).");
 }
 
 void loop() {
     station->readAllSensors();
-    station->publishReport(); // Envoi JSON partout
+    station->publishReport();
 
-    delay(5000); // 5 secondes pour laisser le temps au WiFi
+    delay(2000); // Vérifie toutes les 2 secondes
 }
-

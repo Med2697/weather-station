@@ -9,6 +9,7 @@ private:
     const char* name;
     float temperature;
     float humidity;
+    mutable float lastReportedValue;
 
 public:
     // Constructeur : initialise la librairie sur le pin choisi
@@ -18,4 +19,5 @@ public:
     float getValue() const override; // Retourne la Température
     const char* getName() const override;
     float getHumidity() const override; // Retourne l'hulmidité
+    bool hasChanged (float threeshold) const override;
 };
