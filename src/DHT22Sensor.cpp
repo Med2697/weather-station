@@ -10,15 +10,22 @@ void DHT22Sensor::update() {
     float newTemp = dht.readTemperature();
     float newHum = dht.readHumidity();
 
+    // 1. Vérification de la connexion capteur (Erreur de lecture)
     if (isnan(newTemp) || isnan(newHum)) {
-        Serial.print("Erreur lecture sur "); 
-        Serial.println(name);
-    } else {
-        temperature = newTemp;
-        humidity = newHum;
+        return; // On ignore tout
     }
-}
 
+    // 2. Vérification de l'intégrité physique (Sanitizing)
+    // Une température entre -50 et 60 est raisonnable pour la météo
+    if (newTemp < -50.0 || newTemp > 60.0) {
+        Serial.println("Outlier detecté : Température irréaliste. Rejet.");
+        return;
+    }
+
+    // Si on arrive là, c'est une donnée propre
+    temperature = newTemp;
+    humidity = newHum;
+}
 float DHT22Sensor::getValue() const {
     return temperature;
 }
@@ -54,3 +61,5 @@ bool DHT22Sensor::hasChanged(float threshold) const {
     }
     return false;
 }
+
+
