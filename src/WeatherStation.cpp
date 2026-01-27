@@ -1,67 +1,79 @@
 #include "../include/WeatherStation.h"
 #include "../include/DHT22Sensor.h"
+#include "../include/MqttPublisher.h" // Pas indispensable mais bon à garder
 #include <Arduino.h>
-#include <ArduinoJson.h> // Important pour générer le JSON
+#include <ArduinoJson.h>
 
-void WeatherStation::addSensor(ISensor* sensor) {
-    sensors.push_back(sensor);
-}
+WeatherStation::WeatherStation(size_t bufferSize) : offlineBuffer(bufferSize) {}
 
-void WeatherStation::addPublisher(IPublisher* publisher) {
-    publishers.push_back(publisher);
+void WeatherStation::addSensor(ISensor* sensor) { sensors.push_back(sensor); }
+
+void WeatherStation::addPublisher(IPublisher* publisher) { 
+    publishers.push_back(publisher); 
 }
 
 void WeatherStation::readAllSensors() {
-    for (auto* sensor : sensors) {
-        sensor->update();
-    }
+    for (auto* sensor : sensors) { sensor->update(); }
 }
 
 std::string WeatherStation::generateJsonReport() {
-    // Utilisation de StaticJsonDocument pour économiser la RAM (Embedded Best Practice)
-    StaticJsonDocument<256> doc;
-
-    // Ajouter le timestamp
+    // ArduinoJson V7 Syntaxe
+    JsonDocument doc;
     doc["time"] = millis();
-
-    // Création d'un tableau JSON pour les capteurs
-    JsonArray sensorsArray = doc.createNestedArray("sensors");
+    
+    // V7 Syntaxe pour le tableau
+    JsonArray sensorsArray = doc["sensors"].to<JsonArray>();
 
     for (const auto* sensor : sensors) {
-        JsonObject sensorObj = sensorsArray.createNestedObject();
-        sensorObj["name"] = sensor->getName();
-        sensorObj["temp"] = sensor->getValue();
-        
-        float hum = sensor->getHumidity();
-        sensorObj["hum"] = hum;
+        // V7 Syntaxe pour l'objet
+        JsonObject s = sensorsArray.add<JsonObject>();
+        s["name"] = sensor->getName();
+        s["temp"] = sensor->getValue();
+        float h = sensor->getHumidity();
+        s["hum"] = h;
     }
 
-    // Sérialisation vers String
     std::string output;
     serializeJson(doc, output);
     return output;
 }
 
 void WeatherStation::publishReport() {
-    std::string jsonData = generateJsonReport();
-
-    // OPTIMISATION ICI :
-    // On vérifie si au moins un capteur a changé significativement
-    bool significantChange = false;
+    // 1. Vérification changements
+    bool hasImportantChange = false;
+    float threshold = 0.5;
     for (const auto* sensor : sensors) {
-        if (sensor->hasChanged(0.5)) { // Seuil de 0.5 degré
-            significantChange = true;
-            break; 
-        }
+        if (sensor->hasChanged(threshold)) { hasImportantChange = true; break; }
     }
 
-    // On publie SEULEMENT s'il y a eu un changement important
-    if (significantChange) {
+    if (hasImportantChange) {
+        std::string currentData = generateJsonReport();
+
+        // 2. Publication avec Gestion Buffer (Store & Forward)
         for (auto* publisher : publishers) {
-            publisher->publish(jsonData);
+            
+            if (publisher->isConnected()) {
+                // --- MODE ONLINE ---
+                
+                // 1. On essaye de vider le buffer (données passées)
+                while (!offlineBuffer.isEmpty()) {
+                    std::string oldData = offlineBuffer.pop();
+                    Serial.print("[FLUSH] Anciennes données: ");
+                    Serial.println(oldData.c_str());
+                    publisher->publish(oldData);
+                }
+                
+                // 2. On envoie la donnée actuelle
+                Serial.print("[LIVE] Données actuelles: ");
+                Serial.println(currentData.c_str());
+                publisher->publish(currentData);
+                
+            } else {
+                // --- MODE OFFLINE ---
+                // Si le publisher est offline (ex: MQTT), on bufferise
+                Serial.println("[BUFFER] Offline. Stockage...");
+                offlineBuffer.push(currentData);
+            }
         }
-    } else {
-        // Debug optionnel
-        Serial.println("Aucun changement significatif, envoi annulé (Bandwidth Saving)");
     }
 }

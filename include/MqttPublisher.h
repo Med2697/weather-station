@@ -20,6 +20,8 @@ private:
 
 public:
     MqttPublisher(const char* server, int port, const char* user, const char* pass, const char* topicName);
+    
     void setup(); 
     void publish(const std::string& data) override;
+    bool isConnected() override; // Implémentation requise
 };

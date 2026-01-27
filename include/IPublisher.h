@@ -9,4 +9,5 @@ public:
     // Méthode virtuelle pure pour publier un message (format String ou JSON)
     virtual void setup() =0;
     virtual void publish(const std::string& data) = 0;
+    virtual bool isConnected() = 0;
 };

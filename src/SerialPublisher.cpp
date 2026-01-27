@@ -9,3 +9,7 @@ void SerialPublisher::publish(const std::string& data) {
     // Simplement envoyer les données au port série
     Serial.println(data.c_str());
 }
+
+bool SerialPublisher::isConnected() {
+    return true;
+}
