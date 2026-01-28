@@ -1,23 +1,21 @@
 #pragma once
 #include "Sensor.h"
-#include <DHT.h> // Inclusion de la librairie externe
+#include <DHT.h>
 
-// Pin et Type de capteur configurables à la construction
 class DHT22Sensor : public ISensor {
 private:
-    DHT dht; // L'objet de la librairie
+    DHT dht; // The library object
     const char* name;
     float temperature;
     float humidity;
     mutable float lastReportedValue;
 
 public:
-    // Constructeur : initialise la librairie sur le pin choisi
     DHT22Sensor(int pin, const char* sensorName);
 
     void update() override;
-    float getValue() const override; // Retourne la Température
+    float getValue() const override; // return the temperature
     const char* getName() const override;
-    float getHumidity() const override; // Retourne l'hulmidité
+    float getHumidity() const override; // return the humidity
     bool hasChanged (float threeshold) const override;
 };

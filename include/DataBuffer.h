@@ -10,15 +10,15 @@ private:
 public:
     DataBuffer(size_t size) : maxSize(size) {}
 
-    // Ajouter une donnée (Si full, on supprime la plus ancienne)
+    // Add a data (If full, We delete the oldest one)
     void push(const std::string& data) {
         if (buffer.size() >= maxSize) {
-            buffer.pop(); // On supprime le plus vieux si plein (FIFO)
+            buffer.pop(); 
         }
         buffer.push(data);
     }
 
-    // Récupérer la donnée suivante (Retourne vide si vide)
+    // Return the next data (Return nothing if empty)
     std::string pop() {
         if (buffer.empty()) return "";
         std::string data = buffer.front();

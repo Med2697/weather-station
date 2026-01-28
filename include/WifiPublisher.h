@@ -8,7 +8,7 @@ class WifiPublisher : public IPublisher {
 private:
     const char* ssid;
     const char* password;
-    const char* serverUrl; // L'URL où on envoie les données (ex: Webhook)
+    const char* serverUrl; 
 
 public:
     WifiPublisher(const char* ssid, const char* password, const char* url);

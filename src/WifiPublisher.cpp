@@ -1,6 +1,8 @@
 #include "../include/WifiPublisher.h"
 #include <Arduino.h>
 
+// We don't use this part in our main
+
 WifiPublisher::WifiPublisher(const char* ssid, const char* password, const char* url)
     : ssid(ssid), password(password), serverUrl(url) {
 }
@@ -11,7 +13,6 @@ void WifiPublisher::connect() {
     
     WiFi.begin(ssid, password);
 
-    // On attend la connexion (timeout 10 sec pour éviter de bloquer trop)
     int attempts = 0;
     while (WiFi.status() != WL_CONNECTED && attempts < 20) {
         delay(500);
@@ -34,9 +35,9 @@ bool WifiPublisher::isConnected() {
 
 void WifiPublisher::publish(const std::string& data) {
     if (WiFi.status() != WL_CONNECTED) {
-        // Si on perd la connexion, on essaie de se reconnecter
+        // If we lose the connexion, we try to connect
         connect();
-        if (WiFi.status() != WL_CONNECTED) return; // Toujours pas connecté, on abandonne
+        if (WiFi.status() != WL_CONNECTED) return; 
     }
 
     HTTPClient http;
@@ -46,10 +47,9 @@ void WifiPublisher::publish(const std::string& data) {
     // Envoi de la requête POST
     int httpResponseCode = http.POST(data.c_str());
 
-    // On vérifie la réponse sans afficher trop de logs pour ne pas polluer
     if (httpResponseCode > 0) {
-        // String response = http.getString(); // Debug si besoin
-        // Serial.println(httpResponseCode);
+
+        Serial.println(httpResponseCode);
     }
     
     http.end();

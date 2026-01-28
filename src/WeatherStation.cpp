@@ -17,11 +17,11 @@ void WeatherStation::readAllSensors() {
 }
 
 std::string WeatherStation::generateJsonReport() {
-    // ArduinoJson V7 Syntaxe
+    // ArduinoJson V7 Syntax
     JsonDocument doc;
     doc["time"] = millis();
     
-    // V7 Syntaxe pour le tableau
+    
     JsonArray sensorsArray = doc["sensors"].to<JsonArray>();
 
     for (const auto* sensor : sensors) {
@@ -29,8 +29,7 @@ std::string WeatherStation::generateJsonReport() {
         JsonObject s = sensorsArray.add<JsonObject>();
         s["name"] = sensor->getName();
         s["temp"] = sensor->getValue();
-        float h = sensor->getHumidity();
-        s["hum"] = h;
+        s["hum"] = sensor->getHumidity();
     }
 
     std::string output;
@@ -39,7 +38,7 @@ std::string WeatherStation::generateJsonReport() {
 }
 
 void WeatherStation::publishReport() {
-    // 1. Vérification changements
+    
     bool hasImportantChange = false;
     float threshold = 0.5;
     for (const auto* sensor : sensors) {
@@ -49,28 +48,28 @@ void WeatherStation::publishReport() {
     if (hasImportantChange) {
         std::string currentData = generateJsonReport();
 
-        // 2. Publication avec Gestion Buffer (Store & Forward)
+        
         for (auto* publisher : publishers) {
             
             if (publisher->isConnected()) {
                 // --- MODE ONLINE ---
                 
-                // 1. On essaye de vider le buffer (données passées)
+                
                 while (!offlineBuffer.isEmpty()) {
                     std::string oldData = offlineBuffer.pop();
-                    Serial.print("[FLUSH] Anciennes données: ");
+                    Serial.print("[FLUSH] old datas: ");
                     Serial.println(oldData.c_str());
                     publisher->publish(oldData);
                 }
                 
-                // 2. On envoie la donnée actuelle
-                Serial.print("[LIVE] Données actuelles: ");
+                
+                Serial.print("[LIVE] actual datas: ");
                 Serial.println(currentData.c_str());
                 publisher->publish(currentData);
                 
             } else {
                 // --- MODE OFFLINE ---
-                // Si le publisher est offline (ex: MQTT), on bufferise
+                
                 Serial.println("[BUFFER] Offline. Stockage...");
                 offlineBuffer.push(currentData);
             }

@@ -12,8 +12,8 @@ private:
     const char* mqtt_user;
     const char* mqtt_password;
     const char* topic;
-    
-    WiFiClientSecure espClient;
+    // We don't use SSL/TLS security
+    // WiFiClientSecure espClient;
     PubSubClient client;
 
     void reconnect();
@@ -23,5 +23,5 @@ public:
     
     void setup(); 
     void publish(const std::string& data) override;
-    bool isConnected() override; // Implémentation requise
+    bool isConnected() override; 
 };

@@ -15,22 +15,24 @@ void setup() {
 
     // WIFI
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    Serial.print("Connexion WiFi");
+    Serial.print("Connecting WiFi");
     while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
-    Serial.println("\nWiFi Connecté.");
+    Serial.println("\nWiFi Connected.");
+
+    //Sensors : n our case we are using one DHT22 
+    sensorInside = new DHT22Sensor(4, "Living Room");
 
     // MQTT
-    sensorInside = new DHT22Sensor(4, "Living Room");
     mqttPub = new MqttPublisher(MQTT_SERVER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_TOPIC);
     mqttPub->setup();
 
-    // STATION (Buffer de 20 messages max en RAM)
+    // STATION (Buffer of 20 messages max)
     station = new WeatherStation(20); 
     station->addSensor(sensorInside);
     station->addPublisher(new SerialPublisher());
     station->addPublisher(mqttPub);
 
-    Serial.println("Système Prêt avec Buffer.");
+    Serial.println("Systeme Ready with Buffer.");
 }
 
 void loop() {
